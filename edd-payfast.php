@@ -55,27 +55,40 @@ class EDD_Payfast{
 				'desc' => 'Configure the gateway settings',
 				'type' => 'header',
 			),
-			// array(
-			// 	'id'   => 'edd_payfast_test_mode',
-			// 	'name' => 'Enable Test Mode',
-			// 	'desc' => 'Test mode enables you to test payments before going live. Once the LIVE MODE is enabled on your Payfast account uncheck this',
-			// 	'type' => 'checkbox',
-			// 	'std'  => 0,
-			// ),
-			// array(
-			// 	'id'   => 'edd_payfast_test_merchant_id',
-			// 	'name' => 'Test Merchant ID',
-			// 	'desc' => 'Enter your Test Secret Key here',
-			// 	'type' => 'text',
-			// 	'size' => 'regular',
-			// ),
-			// array(
-			// 	'id'   => 'edd_payfast_test_merchant_key',
-			// 	'name' => 'Test Merchant Key',
-			// 	'desc' => 'Enter your Test Public Key here',
-			// 	'type' => 'text',
-			// 	'size' => 'regular',
-			// ),
+            // array(
+            //     'id'   => 'edd_payfast_updates_api_key',
+            //     'name' => 'EDD Payfast License Key',
+            //     'desc' => 'The API key sent to you after purchasing this plugin. This will grant you access to automatic updates.',
+            //     'type' => 'text',
+            // ),
+			array(
+				'id'   => 'edd_payfast_test_mode',
+				'name' => 'Enable Sandbox Mode',
+				'desc' => 'Sandbox mode enables you to test payments before going live. Once the LIVE MODE is enabled on your Payfast account uncheck this',
+				'type' => 'checkbox',
+				'std'  => 0,
+			),
+			array(
+				'id'   => 'edd_payfast_test_merchant_id',
+				'name' => 'Sandbox Merchant ID',
+				'desc' => 'Enter your Sandbox Secret Key here',
+				'type' => 'text',
+				'size' => 'regular',
+			),
+			array(
+				'id'   => 'edd_payfast_test_merchant_key',
+				'name' => 'Sandbox Merchant Key',
+				'desc' => 'Enter your Sandbox Public Key here',
+				'type' => 'text',
+				'size' => 'regular',
+			),
+            array(
+                'id'   => 'edd_payfast_test_passphrase',
+                'name' => 'Sandbox Passphrase',
+                'desc' => 'Enter your Sandbox Passphrase here',
+                'type' => 'text',
+                'size' => 'regular',
+            ),
 			array(
 				'id'   => 'edd_payfast_live_merchant_id',
 				'name' => 'Live Merchant ID',
@@ -92,8 +105,8 @@ class EDD_Payfast{
 			),
 			array(
 				'id'   => 'edd_payfast_passphrase',
-				'name' => 'Passphrase',
-				'desc' => 'Enter your Passphrase here',
+				'name' => 'Live Passphrase',
+				'desc' => 'Enter your Live Passphrase here',
 				'type' => 'text',
 				'size' => 'regular',
 			)
@@ -140,16 +153,18 @@ function pps_payfast_keys() {
 		$url = 'https://sandbox.payfast.co.za/eng/process';
 		$merchant_id = trim( edd_get_option( 'edd_payfast_test_merchant_id' ) );
 		$merchant_key = trim( edd_get_option( 'edd_payfast_test_merchant_key' ) );
+        $passphrase = trim( edd_get_option( 'edd_payfast_test_passphrase' ) );
 
 	} else {
 
 		$url = 'https://www.payfast.co.za/eng/process';
 		$merchant_id = trim( edd_get_option( 'edd_payfast_live_merchant_id' ) );
 		$merchant_key = trim( edd_get_option( 'edd_payfast_live_merchant_key' ) );
+        $passphrase = trim( edd_get_option( 'edd_payfast_passphrase' ) );
 
 	}
 
-	$passphrase = trim( edd_get_option( 'edd_payfast_passphrase' ) );
+	
 
 	if ( empty( $merchant_id ) || empty( $merchant_key ) || empty( $passphrase ) ) {
 		return array();
@@ -175,7 +190,8 @@ function pps_edd_payfast_plugin_action_links( $links ) {
 }
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'pps_edd_payfast_plugin_action_links' );
 
-function pps_edd_payfast_process_payment( $purchase_data ) {
+
+function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
     $payfast_keys = pps_payfast_keys();
 
@@ -189,7 +205,7 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
 
             if( !empty( $cart['item_number']['options'] ) && !empty( $cart['item_number']['options']['recurring'] ) ){
                 //Recurring purchase
-                $billable = $subscription_products['billable'];				
+                $billable = $subscription_products['billable'];             
 
                 $subscription_products['billable'] = $billable + $cart['price'];
                 $once_off_products['billing_description'][] = $cart['name'];
@@ -209,9 +225,9 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
                 $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
                 
                 $subscription_products['products'][] = array(
-                	'id' 	=> $cart['item_number']['id'],
-                    'name' 	=> $cart['name'],
-                    'total'	=> $cart['price'],
+                    'id'    => $cart['item_number']['id'],
+                    'name'  => $cart['name'],
+                    'total' => $cart['price'],
                     'frequency' => $frequency,
                     'cycles' => $cart['item_number']['options']['recurring']['times'],
                     'signup' => $cart['item_number']['options']['recurring']['signup_fee']
@@ -220,15 +236,15 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
             } else {
                 //Once off purchase
                 
-                $billable = $once_off_products['billable'];				
+                $billable = $once_off_products['billable'];             
 
                 $once_off_products['billable'] = $billable + $cart['price'];
                 $once_off_products['billing_description'][] = $cart['name'];
 
                 $once_off_products['products'][] = array(
-                	'id' 	=> $cart['item_number']['id'],
-                    'name' 	=> $cart['name'],
-                    'total'	=> $cart['price']
+                    'id'    => $cart['item_number']['id'],
+                    'name'  => $cart['name'],
+                    'total' => $cart['price']
                 );
 
             }
@@ -236,15 +252,15 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
     }
 
     $body = array(
-        'merchant_id' 	=> $payfast_keys['merchant_id'],
-        'merchant_key'	=> $payfast_keys['merchant_key'],
-        'return_url'	=> add_query_arg( 'payfast-listener', 'return', admin_url( 'admin-ajax.php') ),
-        'cancel_url' 	=> add_query_arg( 'payfast-listener', 'cancel', admin_url( 'admin-ajax.php') ),
-        'notify_url'	=> add_query_arg( 'payfast-listener', 'notify', admin_url( 'admin-ajax.php') ),
+        'merchant_id'   => $payfast_keys['merchant_id'],
+        'merchant_key'  => $payfast_keys['merchant_key'],
+        'return_url'    => add_query_arg( 'payfast-listener', 'return', admin_url( 'admin-ajax.php') ),
+        'cancel_url'    => add_query_arg( 'payfast-listener', 'cancel', admin_url( 'admin-ajax.php') ),
+        'notify_url'    => add_query_arg( 'payfast-listener', 'notify', admin_url( 'admin-ajax.php') ),
 
-        'name_first'	=> $purchase_data['post_data']['edd_first'],
-        'name_last'		=> $purchase_data['post_data']['edd_last'],
-        'email_address'	=> $purchase_data['post_data']['edd_email'],		
+        'name_first'    => $purchase_data['post_data']['edd_first'],
+        'name_last'     => $purchase_data['post_data']['edd_last'],
+        'email_address' => $purchase_data['post_data']['edd_email'],        
 
     );
 
@@ -283,6 +299,8 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
 
     } else {
 
+        $_SESSION['edd_pf_payment'] = $payment;
+
         $body['m_payment_id'] = 'EDD-' . $payment . '-' . uniqid();
 
         $body['amount'] = number_format( sprintf( '%.2f', $once_off_products['billable'] ) );
@@ -292,9 +310,11 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
 
             $body['subscription_type'] = 1;
 
-            // $body['billing_date'] = '2021-02-14';
+            $date_string = ( $subscription_products['products'][0]['frequency'] == 3 ) ? 'MONTH' : 'YEAR';
+
+            $body['billing_date'] = date( 'Y-m-d', strtotime( current_time( 'mysql' ). ' + 1 '.$date_string ) );
             
-            $body['recurring_amount'] = $once_off_products['billable'];
+            $body['recurring_amount'] = $subscription_products['billable'];
             /**
              * 3 - Monthly
              * 4 - Quarterly
@@ -304,14 +324,14 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
             $body['frequency'] = $subscription_products['products'][0]['frequency'];
 
             switch( $body['frequency'] ){
-            	case 3:
-            		$frequency_string = 'month';
-        			break;
-    			case 6:
-    				$frequency = 'year';
-    				break;
-				default:
-					$frequency = 'month';
+                case 3:
+                    $frequency_string = 'month';
+                    break;
+                case 6:
+                    $frequency = 'year';
+                    break;
+                default:
+                    $frequency = 'month';
             }
             /**
              * 0 - Unlimited
@@ -324,34 +344,34 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
             $subscriber = new EDD_Recurring_Subscriber( $purchase_data['user_email'] );
 
             $subscriber_data = array(
-            	'name'        => $purchase_data['post_data']['edd_first'] . ' '. $purchase_data['post_data']['edd_last'],
-            	'email'       => $purchase_data['user_email'],
-            	'user_id'     => $purchase_data['user_info']['id'],
+                'name'        => $purchase_data['post_data']['edd_first'] . ' '. $purchase_data['post_data']['edd_last'],
+                'email'       => $purchase_data['user_email'],
+                'user_id'     => $purchase_data['user_info']['id'],
             );
 
             $subscriber_created = $subscriber->create( $subscriber_data );
 
             $data = array(
-			    'customer_id'       => $subscriber->id, // an integer, should be a valid customer_id
-			    'period'            => $frequency_string, // accepts 'day', 'week', 'month', or 'year'; how often the subscription renews
-			    'initial_amount'    => $once_off_products['billable'], // accepts a float
-			    'recurring_amount'  => $subscription_products['billable'], // accepts a float
-			    'bill_times'        => $subscription_products['products'][0]['cycles'], // accepts an integer; the number of times billing should happen, 0 means indefinite
-			    'parent_payment_id' => $payment, // accepts an integer; the payment id returned by the initial payment
-			    'product_id'        => $subscription_products['products'][0]['id'], // accepts an integer; the id of the product
-			    'created'           => date( 'Y-m-d H:i:s', current_time('timestamp') ), // accepts a date string; formatted like 0000-00-00 00:00:00
-			    'expiration'        => '0000-00-00 00:00:00', // accepts a date string; formatted like 0000-00-00 00:00:00
-			    'status'            => 'Pending', // accepts 'Pending', 'Active', 'Cancelled', 'Expired', 'Failing', 'Completed'
-			    'profile_id'        => '', // accepts a string returned by the payment gateway as their subscription ID
-			);
+                'customer_id'       => $subscriber->id, // an integer, should be a valid customer_id
+                'period'            => $frequency_string, // accepts 'day', 'week', 'month', or 'year'; how often the subscription renews
+                'initial_amount'    => $once_off_products['billable'], // accepts a float
+                'recurring_amount'  => $subscription_products['billable'], // accepts a float
+                'bill_times'        => $subscription_products['products'][0]['cycles'], // accepts an integer; the number of times billing should happen, 0 means indefinite
+                'parent_payment_id' => $payment, // accepts an integer; the payment id returned by the initial payment
+                'product_id'        => $subscription_products['products'][0]['id'], // accepts an integer; the id of the product
+                'created'           => date( 'Y-m-d H:i:s', current_time('timestamp') ), // accepts a date string; formatted like 0000-00-00 00:00:00
+                'expiration'        => date( 'Y-m-d H:i:s', strtotime( current_time( 'mysql' ). ' + 1 '.$date_string ) ), // accepts a date string; formatted like 0000-00-00 00:00:00
+                'status'            => 'Pending', // accepts 'Pending', 'Active', 'Cancelled', 'Expired', 'Failing', 'Completed'
+                'profile_id'        => '', // accepts a string returned by the payment gateway as their subscription ID
+            );
 
             $subscription = new EDD_Subscription;
 
-			$subscription_created = $subscription->create( $data );
+            $subscription_created = $subscription->create( $data );            
 
-			if( !empty( $subscription_created->id ) ){
-				$_SESSION['edd_pf_subid'] = $subscription_created->id;
-			}
+            if( !empty( $subscription_created->id ) ){
+                $_SESSION['edd_pf_subid'] = $subscription_created->id;
+            }
 
         }
 
@@ -367,18 +387,42 @@ function pps_edd_payfast_process_payment( $purchase_data ) {
 
         edd_set_payment_transaction_id( $payment, $payfast_data['reference'] );
 
-        $curl = curl_init( $payfast_keys['url'] );
-        curl_setopt( $curl, CURLOPT_POSTFIELDS, $body );
-        curl_setopt( $curl, CURLOPT_POSTREDIR, true );		
-        curl_setopt($curl, CURLOPT_HEADER, 0 );
-        curl_exec( $curl );
-
-
     }
+    
+    ?>
+    <script>
+        window.onload = function(){
+
+            var amount = document.getElementById('amount').value;
+
+            if( amount == 0 ){
+                alert( 'An initial billing amount is required for a Payfast Transaction to be created. Plese set a Sign Up Fee greater than 0 for this product.' );
+            }
+
+            document.getElementById('edd_pf_paynow').click();
+          
+        }
+     </script>
+     <div style='width: 50%; text-align: center; display: block; margin: 50px auto;'>
+        
+        <img src="<?php echo PPS_EDD_PAYFAST_URL.'/assets/images/loader.gif'; ?>" title='Loading' alt='Loading' />
+        <p>You will be automatically redirected to Payfast to process your payment shortly.</p>
+        <p>If you are not automatically redirected, click the button below.</p>
+     
+         <form method="POST" action="<?php echo $payfast_keys['url']; ?>">
+            <?php 
+                foreach( $body as $key => $val ){
+                    echo "<input type='hidden' id='".$key."' name='".$key."' value='".$val."' />";    
+                }
+            ?>
+            <input type="image" name="submit" id="edd_pf_paynow" src="<?php echo PPS_EDD_PAYFAST_URL.'/assets/images/payfast-pay-now.png'; ?>" border="0" alt="Submit" />
+
+        </form>
+    </div>
+    <?php
 
 }
-add_action( 'edd_gateway_payfast', 'pps_edd_payfast_process_payment' );
-
+add_action( 'edd_gateway_payfast', 'pps_edd_payfast_process_payment_reworked' );
 
 function pps_edd_generate_signature($data, $passPhrase = null) {
     // Create parameter string
@@ -625,7 +669,7 @@ function pps_edd_payfast_testmode_notice() {
     if ( edd_get_option( 'edd_payfast_test_mode' ) ) {
         ?>
         <div class="error">
-            <p>Payfast testmode is still enabled for EDD, click <a href="<?php echo get_bloginfo( 'wpurl' ); ?>/wp-admin/edit.php?post_type=download&page=edd-settings&tab=gateways&section=payfast-settings">here</a> to disable it when you want to start accepting live payment on your site.</p>
+            <p>Payfast Sandbox is still enabled for EDD, click <a href="<?php echo get_bloginfo( 'wpurl' ); ?>/wp-admin/edit.php?post_type=download&page=edd-settings&tab=gateways&section=payfast-settings">here</a> to disable it when you want to start accepting live payment on your site.</p>
         </div>
         <?php
     }

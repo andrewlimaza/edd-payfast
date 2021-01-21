@@ -6,10 +6,34 @@ function pps_edd_payfast_redirect() {
 
 	if( isset( $_REQUEST['payfast-listener'] ) ){
 
-		if( $_REQUEST['payfast-listener'] === 'return' ){
+		if( $_REQUEST['payfast-listener'] === 'cancel' ){            
 
-		} else if( $_REQUEST['payfast-listener'] === 'cancel' ){
+            if( !empty( $_SESSION['edd_pf_payment'] ) ){
+                
+                if( class_exists( 'EDD_Payment' ) ){
 
+                    $payment = new EDD_Payment( intval( $_SESSION['edd_pf_payment'] ) );
+                    $payment->status = 'abandoned';
+                    $payment->save();
+
+                }
+
+            }
+
+            if( !empty( $_SESSION['edd_pf_subid'] ) ){
+
+                if( class_exists('EDD_Subscription' ) ){
+
+                    $subscription = new EDD_Subscription( intval( $_SESSION['edd_pf_subid'] ) );
+                    $subscription->update( array( 'status' => 'cancelled' ) );
+
+                }
+
+            }
+
+            edd_set_error( 'failed_payment', 'Payment Cancelled.' );
+
+            edd_send_back_to_checkout( array( 'payment_method' => 'payfast', 'payfast-status' => 'cancelled' ) );
 
 		} else if( $_REQUEST['payfast-listener'] === 'notify' ){
             
@@ -36,7 +60,14 @@ function pps_edd_payfast_redirect() {
 			$check1 = pfValidSignature($pfData, $pfParamString, $keys['passphrase'] );
 			$check2 = pfValidIP();
 			$check3 = pfValidPaymentData( floatval( $_REQUEST['amount_gross'] ), $pfData );
-			$check4 = pfValidServerConfirmation($pfParamString, 'www.payfast.co.za');
+
+            if( edd_get_option( 'edd_payfast_test_mode' ) ){
+                $payfast_verify_url = 'sandbox.payfast.co.za';
+            } else {
+                $payfast_verify_url = 'www.payfast.co.za';
+            }
+
+			$check4 = pfValidServerConfirmation($pfParamString, $payfast_verify_url );
 
 			if( $check1 && $check2 && $check3 && $check4 ){
 			    // All checks have passed, the payment is successful
@@ -75,21 +106,25 @@ function pps_edd_payfast_redirect() {
                     $edd_payment_id = $initial_payment_id[1];
                 }
 
+                if( !class_exists( 'EDD_Payment' ) ){
+                    return;
+                }
+
                 $payment = new EDD_Payment( $edd_payment_id );
 
-                $order_total = edd_get_payment_amount( $payment_id );
+                $order_total = edd_get_payment_amount( $edd_payment_id );
 
-                if ( $_REQUEST['amount_gross'] < $order_total ) {
+                // if ( $_REQUEST['amount_gross'] < $order_total ) {
 
-                    $note = 'Look into this purchase. This order is currently revoked. Reason: Amount paid is less than the total order amount. Amount Paid was ' . $amount_paid . ' while the total order amount is ' . $order_total . '. Payfast Transaction Reference: ' . $payfast_txn_ref;
+                //     $note = 'Look into this purchase. This order is currently revoked. Reason: Amount paid is less than the total order amount. Amount Paid was ' . $amount_paid . ' while the total order amount is ' . $order_total . '. Payfast Transaction Reference: ' . $_REQUEST['pf_payment_id'];
 
-                    $payment->status = 'revoked';
+                //     $payment->status = 'revoked';
 
-                    $payment->add_note( $note );
+                //     $payment->add_note( $note );
 
-                    $payment->transaction_id = $_REQUEST['pf_payment_id'];
+                //     $payment->transaction_id = $_REQUEST['pf_payment_id'];
 
-                } else {
+                // } else {
 
                     $note = 'Payment transaction was successful. Payfast Transaction Reference: ' . $_REQUEST['pf_payment_id'];
 
@@ -97,34 +132,26 @@ function pps_edd_payfast_redirect() {
 
                     $payment->add_note( $note );
 
-                    $payment->transaction_id = $payfast_txn_ref;
+                    $payment->transaction_id = $_REQUEST['pf_payment_id'];
 
-                }
-
-                $payment->save();
-
-                // edd_update_payment_status( intval( $edd_payment_id ), 'publish' );
-
-                // $the_payment_id = edd_get_purchase_id_by_transaction_id( $_REQUEST['m_payment_id'] );
-
-                // if ( $the_payment_id && get_post_status( $the_payment_id ) == 'publish' ){
-
-                    // edd_set_payment_transaction_id( $edd_payment_id, $_REQUEST['pf_payment_id'] );
-
-                    edd_empty_cart();
-
-                    edd_send_to_success_page();
-                 
                 // }
 
+                $payment->save();
+                 
 			} else {
 			    // Some checks have failed, check payment manually and log for investigation
                 edd_set_error( 'failed_payment', 'Payment failed. Please try again.' );
 
-                edd_send_back_to_checkout( '?payment-mode=payfast' );
+                edd_send_back_to_checkout( array( 'payment_method' => 'payfast' ) );
 			} 
 
-		}
+		} else if( $_REQUEST['payfast-listener'] === 'return' ){
+
+            edd_empty_cart();
+            
+            edd_send_to_success_page();
+
+        }
 
 	}
 	
