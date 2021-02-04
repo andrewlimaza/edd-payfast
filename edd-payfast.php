@@ -222,7 +222,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
                 $once_off = $once_off_products['billable'];
 
-                $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
+                $once_off_products['billable'] = $once_off + $cart['price'];
                 
                 $subscription_products['products'][] = array(
                     'id'    => $cart['item_number']['id'],
