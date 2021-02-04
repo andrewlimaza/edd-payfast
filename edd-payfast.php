@@ -4,7 +4,12 @@
  * Description: Accept once off and recurring payments through Easy Digital Downloads using South Africa's most popular payment gateway, Payfast.
  * Author: Pacific Plugins
  * Author URI: https://pacificplugins.com/
- * Version 1.0.0
+ * Version: 1.0.1
+ */
+
+/**
+ * 1.0.1 - 2021-02-04
+ * Bug Fix: Payfast payment method icon fixed 
  */
 
 // Exit if accessed directly
@@ -13,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'PPS_EDD_PAYFAST_URL', plugin_dir_url( __FILE__ ) );
-define( 'PPS_EDD_PAYFAST_VERSION', '1.0.0' );
+define( 'PPS_EDD_PAYFAST_VERSION', '1.0.1' );
 
 // Check if Easy Digital Downloads is active
 if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
@@ -22,6 +27,7 @@ if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
 
 add_action( 'edd_payfast_cc_form', '__return_false' );
 
+require_once plugin_dir_path( __FILE__ ).'updates.php';
 require_once plugin_dir_path( __FILE__ ).'itn.php';
 
 class EDD_Payfast{
@@ -222,7 +228,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
                 $once_off = $once_off_products['billable'];
 
-                $once_off_products['billable'] = $once_off + $cart['price'];
+                $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
                 
                 $subscription_products['products'][] = array(
                     'id'    => $cart['item_number']['id'],
