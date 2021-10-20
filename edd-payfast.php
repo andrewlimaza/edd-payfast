@@ -36,12 +36,16 @@ require_once plugin_dir_path( __FILE__ ).'itn.php';
 class EDD_Payfast{
 
 	public function __construct(){
-
 		add_action( 'edd_after_cc_fields', array( $this, 'pps_edd_payfast_add_errors' ), 999 );
 		add_filter( 'edd_settings_sections_gateways', array( $this, 'gateway_section' ) );
 		add_filter( 'edd_settings_gateways', array( $this, 'settings' ), 1 );
 		add_filter( 'edd_payment_gateways', array( $this, 'register_gateway' ) );
+        add_action( 'init', array( $this, 'load_plugin_text_domain' ) );
 	}
+
+    function load_plugin_text_domain() {
+        load_plugin_textdomain( 'edd-payfast', false, basename( dirname( __FILE__ ) ) . '/languages' ); 
+    }
 
 	function pps_edd_payfast_add_errors() {
 		echo '<div id="edd-payfast-payment-errors"></div>';
