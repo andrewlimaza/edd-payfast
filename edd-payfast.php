@@ -1,15 +1,18 @@
 <?php
 /**
- * Plugin Name: Easy Digital Downloads - Payfast Integration
+ * Plugin Name: Easy Digital Downloads - PayFast Integration
+ * Plugin URI: https://arctek.co.za/downloads/easy-digital-downloads-payfast/
  * Description: Accept once off and recurring payments through Easy Digital Downloads using South Africa's most popular payment gateway, Payfast.
- * Author: Pacific Plugins
- * Author URI: https://pacificplugins.com/
- * Version: 1.0.1
- */
-
-/**
- * 1.0.1 - 2021-02-04
- * Bug Fix: Payfast payment method icon fixed 
+ * Version: 1.1.0
+ * Requires at least: 5.2
+ * Requires PHP: 7.2
+ * Author: Arctek Technologies (Pty) Ltd
+ * Author URI: https://arctek.co.za/
+ * License: GPL v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Update URI: https://arctek.co.za/downloads/easy-digital-downloads-payfast/
+ * Text Domain: edd-payfast
+ * Domain Path: /languages
  */
 
 // Exit if accessed directly
@@ -18,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'PPS_EDD_PAYFAST_URL', plugin_dir_url( __FILE__ ) );
-define( 'PPS_EDD_PAYFAST_VERSION', '1.0.1' );
+define( 'PPS_EDD_PAYFAST_VERSION', '1.1.0' );
 
 // Check if Easy Digital Downloads is active
 if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
@@ -46,7 +49,7 @@ class EDD_Payfast{
 
 	function gateway_section( $sections ) {
 
-		$sections['payfast-settings'] = 'Payfast';
+		$sections['payfast-settings'] = 'PayFast';
 
 		return $sections;
 
@@ -57,7 +60,7 @@ class EDD_Payfast{
 		$payfast_settings = array(
 			array(
 				'id'   => 'edd_payfast_settings',
-				'name' => '<strong>Payfast Settings</strong>',
+				'name' => '<strong>PayFast Settings</strong>',
 				'desc' => 'Configure the gateway settings',
 				'type' => 'header',
 			),
@@ -70,7 +73,7 @@ class EDD_Payfast{
 			array(
 				'id'   => 'edd_payfast_test_mode',
 				'name' => 'Enable Sandbox Mode',
-				'desc' => 'Sandbox mode enables you to test payments before going live. Once the LIVE MODE is enabled on your Payfast account uncheck this',
+				'desc' => 'Sandbox mode enables you to test payments before going live. Once the LIVE MODE is enabled on your PayFast account uncheck this',
 				'type' => 'checkbox',
 				'std'  => 0,
 			),
@@ -129,8 +132,8 @@ class EDD_Payfast{
 	function register_gateway( $gateways ) {
 
 		$gateways['payfast'] = array(
-			'admin_label'    => 'Payfast',
-			'checkout_label' => 'Payfast',
+			'admin_label'    => 'PayFast',
+			'checkout_label' => 'PayFast',
 		);
 
 		return $gateways;
@@ -201,9 +204,10 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
     $payfast_keys = pps_payfast_keys();
 
+
     $once_off_products = array( 'billable' => 0, 'billing_description' => array(), 'products' => array() );
 
-    $subscription_products = array( 'signup' => 0, 'billable' => 0, 'billing_description' => array(), 'products' => array() );
+    $subscription_products = array('billable' => 0, 'billing_description' => array(), 'products' => array() );
 
     if( !empty( $purchase_data['cart_details'] ) ){
 
@@ -214,6 +218,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
                 $billable = $subscription_products['billable'];             
 
                 $subscription_products['billable'] = $billable + $cart['price'];
+         
                 $once_off_products['billing_description'][] = $cart['name'];
 
                 $period = $cart['item_number']['options']['recurring']['period'];
@@ -230,19 +235,25 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
                 $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
                 
+                //If there is no signup fee, let's default to the billing fee as it's required.
+                if ( ( empty( $once_off_products['billable'] ) || $once_off_products['billable'] <= 0 ) &&  apply_filters( 'edd_pf_disable_free_signup', false, $cart ) ) {
+                    $once_off_products['billable'] = $subscription_products['billable'];
+                }
+                
                 $subscription_products['products'][] = array(
                     'id'    => $cart['item_number']['id'],
                     'name'  => $cart['name'],
                     'total' => $cart['price'],
                     'frequency' => $frequency,
                     'cycles' => $cart['item_number']['options']['recurring']['times'],
-                    'signup' => $cart['item_number']['options']['recurring']['signup_fee']
+                    'signup' => $once_off_products['billable']
                 );
 
             } else {
                 //Once off purchase
                 
-                $billable = $once_off_products['billable'];             
+                $billable = $once_off_products['billable']; 
+                
 
                 $once_off_products['billable'] = $billable + $cart['price'];
                 $once_off_products['billing_description'][] = $cart['name'];
@@ -310,6 +321,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
         $body['m_payment_id'] = 'EDD-' . $payment . '-' . uniqid();
 
         $body['amount'] = number_format( sprintf( '%.2f', $once_off_products['billable'] ) );
+        $body['amount'] = floatval( $body['amount'] );
         $body['item_name'] = implode( ", ", $once_off_products['billing_description'] );        
 
         if( !empty($subscription_products['products'] ) ){
@@ -391,28 +403,29 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
         $payfast_data['email']     = $purchase_data['user_email'];
         $payfast_data['reference'] = 'EDD-' . $payment . '-' . uniqid();
 
+
         edd_set_payment_transaction_id( $payment, $payfast_data['reference'] );
 
     }
     
     ?>
-    <script>
+    <!-- <script>
         window.onload = function(){
 
             var amount = document.getElementById('amount').value;
 
             if( amount == 0 ){
-                alert( 'An initial billing amount is required for a Payfast Transaction to be created. Plese set a Sign Up Fee greater than 0 for this product.' );
+                alert( 'An initial billing amount is required for a Payfast Transaction to be created. Please set a Sign Up Fee greater than 0 for this product.' );
             }
 
             document.getElementById('edd_pf_paynow').click();
           
         }
-     </script>
+     </script> -->
      <div style='width: 50%; text-align: center; display: block; margin: 50px auto;'>
         
         <img src="<?php echo PPS_EDD_PAYFAST_URL.'/assets/images/loader.gif'; ?>" title='Loading' alt='Loading' />
-        <p>You will be automatically redirected to Payfast to process your payment shortly.</p>
+        <p>You will be automatically redirected to PayFast to process your payment shortly.</p>
         <p>If you are not automatically redirected, click the button below.</p>
      
          <form method="POST" action="<?php echo $payfast_keys['url']; ?>">
@@ -430,22 +443,38 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 }
 add_action( 'edd_gateway_payfast', 'pps_edd_payfast_process_payment_reworked' );
 
-function pps_edd_generate_signature($data, $passPhrase = null) {
-    // Create parameter string
-    $pfOutput = '';
-    foreach( $data as $key => $val ) {
-        if(!empty($val) || $val === 0 ) {
-            $pfOutput .= $key .'='. urlencode( trim( $val ) ) .'&';
+/**
+ * Generate PayFast Signature for checkouts.
+ * @since 1.1.0
+ */
+function pps_edd_generate_signature($pfData, $passPhrase = null) {
+    
+    $data = array();
+
+    // Loop through supplied data, to sort later.
+    foreach ( $pfData as $key => $val ) {
+        $data[$key] = stripslashes( $val );
+    }
+
+    // Add passphrase to pfData.
+    if ( $passPhrase !== null ) {
+        $pfData['passphrase'] = $passPhrase;
+    }
+
+    // Sort the array by key, alphabetically
+    ksort($pfData);
+
+    $pfParamString = '';
+    foreach ($pfData as $key => $val) {
+        if ($key !== 'signature') {
+            $pfParamString .= $key . '=' . urlencode($val) . '&';
         }
     }
 
-    // Remove last ampersand
-    $getString = substr( $pfOutput, 0, -1 );
-    if( $passPhrase !== null ) {
-        $getString .= '&passphrase='. urlencode( trim( $passPhrase ) );
-    }
-    
-    return md5( $getString );
+    // Remove the last '&amp;' from the parameter string
+    $pfParamString = substr($pfParamString, 0, -1);
+    return md5($pfParamString);
+
 } 
 
 
@@ -672,7 +701,7 @@ function pps_edd_payfast_verify_transaction( $payment_token ) {
 
 function pps_edd_payfast_testmode_notice() {
 
-    if ( edd_get_option( 'edd_payfast_test_mode' ) ) {
+    if ( edd_get_option( 'edd_payfast_test_mode' ) && ( isset( $_REQUEST['page'] ) && $_REQUEST['page'] == 'edd-settings' ) ) {
         ?>
         <div class="error">
             <p>Payfast Sandbox is still enabled for EDD, click <a href="<?php echo get_bloginfo( 'wpurl' ); ?>/wp-admin/edit.php?post_type=download&page=edd-settings&tab=gateways&section=payfast-settings">here</a> to disable it when you want to start accepting live payment on your site.</p>
