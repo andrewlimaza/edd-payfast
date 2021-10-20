@@ -1,0 +1,35 @@
+# Copyright (C) 2021 Arctek Technologies (Pty) Ltd
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Easy Digital Downloads - PayFast Integration 1.1.0\n"
+"Report-Msgid-Bugs-To: info@arctek.co.za\n"
+"Last-Translator: Arctek Technologies (Pty) Ltd <info@arctek.co.za>\n"
+"Language-Team: Arctek Technologies (Pty) Ltd <info@arctek.co.za>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2021-10-20T15:08:36+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.5.0\n"
+"X-Domain: edd-payfast\n"
+
+#. Plugin Name of the plugin
+msgid "Easy Digital Downloads - PayFast Integration"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://arctek.co.za/downloads/easy-digital-downloads-payfast/"
+msgstr ""
+
+#. Description of the plugin
+msgid "Accept once off and recurring payments through Easy Digital Downloads using South Africa's most popular payment gateway, Payfast."
+msgstr ""
+
+#. Author of the plugin
+msgid "Arctek Technologies (Pty) Ltd"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://arctek.co.za/"
+msgstr ""
