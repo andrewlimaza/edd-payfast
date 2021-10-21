@@ -326,7 +326,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
         $body['amount'] = number_format( sprintf( '%.2f', $once_off_products['billable'] ) );
         $body['amount'] = floatval( $body['amount'] );
-        $body['item_name'] = implode( ", ", $once_off_products['billing_description'] );        
+        $body['item_name'] = html_entity_decode( implode( ", ", $once_off_products['billing_description'] ) );        
 
         if( !empty($subscription_products['products'] ) ){
 
@@ -471,7 +471,7 @@ function pps_edd_generate_signature($pfData, $passPhrase = null) {
     $pfParamString = '';
     foreach ($pfData as $key => $val) {
         if ($key !== 'signature') {
-            $pfParamString .= $key . '=' . urlencode($val) . '&';
+            $pfParamString .= $key . '=' . urlencode( $val ) . '&';
         }
     }
 
@@ -497,6 +497,7 @@ function pps_edd_payfast_verify_payment(){
         'amount_net'		=> $_REQUEST['amount_net'],
         'merchant_id'		=> $_REQUEST['merchant_id'],
     );
+
 
 }
 
