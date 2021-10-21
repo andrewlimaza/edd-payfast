@@ -413,19 +413,19 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
     }
     
     ?>
-    <!-- <script>
+    <script>
         window.onload = function(){
 
-            var amount = document.getElementById('amount').value;
+            // var amount = document.getElementById('amount').value;
 
-            if( amount == 0 ){
-                alert( 'An initial billing amount is required for a Payfast Transaction to be created. Please set a Sign Up Fee greater than 0 for this product.' );
-            }
+            // if( amount == 0 ){
+            //     alert( 'An initial billing amount is required for a Payfast Transaction to be created. Please set a Sign Up Fee greater than 0 for this product.' );
+            // }
 
             document.getElementById('edd_pf_paynow').click();
           
         }
-     </script> -->
+     </script>
      <div style='width: 50%; text-align: center; display: block; margin: 50px auto;'>
         
         <img src="<?php echo PPS_EDD_PAYFAST_URL.'/assets/images/loader.gif'; ?>" title='Loading' alt='Loading' />
