@@ -20,7 +20,7 @@ For detailed installation steps, visit the [documentation](https://arctek.co.za/
 If you find an issue/bug, let us know by [creating a detailed GitHub issue](https://github.com/andrewlimaza/edd-payfast/issues/new).
 
 ## Support ##
-This is a developer's portal for Easy Digital Downloads - PayFast Integration. We do not offer support on this channel. **Any support related questions should be directed to [arctek.co.za/downloads/easy-digital-downloads-payfast/](https://arctek.co.za/downloads/easy-digital-downloads-payfast/).**
+This is a developer's portal for Easy Digital Downloads - PayFast Integration. We do not offer support on this channel. **Any support related questions should be directed to [arctek.co.za/support](https://arctek.co.za/support/).**
 
 ## Contributing to Easy Digital Downloads - PayFast Integration ##
 We encourage and welcome any contribution to Easy Digital Downloads - PayFast Integration. Do not hesitate to reach out to us if you have any further questions.
