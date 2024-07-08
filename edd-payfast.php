@@ -75,13 +75,6 @@ class EDD_Payfast{
             //     'type' => 'text',
             // ),
 			array(
-				'id'   => 'edd_payfast_test_mode',
-				'name' => 'Enable Sandbox Mode',
-				'desc' => 'Sandbox mode enables you to test payments before going live. Once the LIVE MODE is enabled on your PayFast account uncheck this',
-				'type' => 'checkbox',
-				'std'  => 0,
-			),
-			array(
 				'id'   => 'edd_payfast_test_merchant_id',
 				'name' => 'Sandbox Merchant ID',
 				'desc' => 'Enter your Sandbox Secret Key here',
@@ -161,7 +154,7 @@ add_action( 'plugins_loaded', 'edd_payfast', 10 );
 
 function pps_payfast_keys() {
 
-	if ( edd_get_option( 'edd_payfast_test_mode' ) ) {
+	if ( edd_is_test_mode() ) {
 
 		$url = 'https://sandbox.payfast.co.za/eng/process';
 		$merchant_id = trim( edd_get_option( 'edd_payfast_test_merchant_id' ) );
@@ -235,15 +228,10 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
                     $frequency = 6;
                 }
 
+                // Figure out the once off price and the signup fee.
                 $once_off = $once_off_products['billable'];
-
                 $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
-                
-                //If there is no signup fee, let's default to the billing fee as it's required.
-                if ( ( empty( $once_off_products['billable'] ) || $once_off_products['billable'] <= 0 ) &&  apply_filters( 'edd_pf_disable_free_signup', false, $cart ) ) {
-                    $once_off_products['billable'] = $subscription_products['billable'];
-                }
-                
+                                
                 $subscription_products['products'][] = array(
                     'id'    => $cart['item_number']['id'],
                     'name'  => $cart['name'],
@@ -583,7 +571,7 @@ function pps_edd_payfast_ipn_verify() {
 
     $json = file_get_contents( 'php://input' );
 
-    if ( edd_get_option( 'edd_payfast_test_mode' ) ) {
+    if ( edd_is_test_mode() ) {
 
         $secret_key = trim( edd_get_option( 'edd_payfast_test_secret_key' ) );
 
@@ -668,7 +656,7 @@ function pps_edd_payfast_verify_transaction( $payment_token ) {
 
     $payfast_url = 'https://api.payfast.co/transaction/verify/' . $payment_token;
 
-    if ( edd_get_option( 'edd_payfast_test_mode' ) ) {
+    if ( edd_is_test_mode() ) {
 
         $secret_key = trim( edd_get_option( 'edd_payfast_test_secret_key' ) );
 
@@ -703,21 +691,6 @@ function pps_edd_payfast_verify_transaction( $payment_token ) {
 
 }
 
-
-function pps_edd_payfast_testmode_notice() {
-
-    if ( edd_get_option( 'edd_payfast_test_mode' ) && ( isset( $_REQUEST['page'] ) && $_REQUEST['page'] == 'edd-settings' ) ) {
-        ?>
-        <div class="error">
-            <p>Payfast Sandbox is still enabled for EDD, click <a href="<?php echo get_bloginfo( 'wpurl' ); ?>/wp-admin/edit.php?post_type=download&page=edd-settings&tab=gateways&section=payfast-settings">here</a> to disable it when you want to start accepting live payment on your site.</p>
-        </div>
-        <?php
-    }
-
-}
-add_action( 'admin_notices', 'pps_edd_payfast_testmode_notice' );
-
-
 function pps_edd_payfast_payment_icons( $icons ) {
 
     $icons[ PPS_EDD_PAYFAST_URL . 'assets/images/payfast.png' ] = 'Payfast';
@@ -729,9 +702,7 @@ add_filter( 'edd_accepted_payment_icons', 'pps_edd_payfast_payment_icons' );
 
 
 function pps_edd_payfast_extra_edd_currencies( $currencies ) {
-
     $currencies['ZAR'] = 'South African Rand (R)';
-
     return $currencies;
 
 }
