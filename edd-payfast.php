@@ -229,8 +229,8 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
                 }
 
                 // Figure out the once off price and the signup fee.
-                $once_off = $once_off_products['billable'];
-                $once_off_products['billable'] = $once_off + $cart['item_number']['options']['recurring']['signup_fee'];
+                $once_off = (float) $cart['item_number']['options']['recurring']['signup_fee'] ?: 0;
+                $once_off_products['billable'] = $once_off + $cart['price'];
                                 
                 $subscription_products['products'][] = array(
                     'id'    => $cart['item_number']['id'],
@@ -572,13 +572,9 @@ function pps_edd_payfast_ipn_verify() {
     $json = file_get_contents( 'php://input' );
 
     if ( edd_is_test_mode() ) {
-
         $secret_key = trim( edd_get_option( 'edd_payfast_test_secret_key' ) );
-
     } else {
-
         $secret_key = trim( edd_get_option( 'edd_payfast_live_secret_key' ) );
-
     }
 
     // validate event do all at once to avoid timing attack
