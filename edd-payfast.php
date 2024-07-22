@@ -220,7 +220,6 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
                 $period = $cart['item_number']['options']['recurring']['period'];
 
-                $frequency = 3;
                 // Convert EDD periods to PayFast periods.
                 switch ( $period ) {
                     case 'day':
