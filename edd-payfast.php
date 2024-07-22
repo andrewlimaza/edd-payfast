@@ -221,11 +221,28 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
                 $period = $cart['item_number']['options']['recurring']['period'];
 
                 $frequency = 3;
-
-                if( $period === 'month' ){
-                    $frequency = 3;
-                } else if( $period === 'year' ){
-                    $frequency = 6;
+                // Convert EDD periods to PayFast periods.
+                switch ( $period ) {
+                    case 'day':
+                        $frequency = 1;
+                        break;
+                    case 'week':
+                        $frequency = 2;
+                        break;
+                    case 'month':
+                        $frequency = 3;
+                        break;
+                    case 'quarter':
+                        $frequency = 4;
+                        break;
+                    case 'semi-year':
+                        $frequency = 5;
+                        break;
+                    case 'year':
+                        $frequency = 6;
+                        break;
+                    default:
+                        $frequency = 3;
                 }
 
                 // Figure out the once off price and the signup fee.
@@ -274,7 +291,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
     );
 
     $payment_data = array(
-        'price'        => $once_off_products['billable'],
+        'price'        => $purchase_data['price'],
         'date'         => $purchase_data['date'],
         'user_email'   => $purchase_data['user_email'],
         'purchase_key' => $purchase_data['purchase_key'],
@@ -300,7 +317,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
         edd_send_back_to_checkout( '?payment-mode=payfast&error=payment_creation_failed' );
 
-    } else if( $subscription_count > 1 ) {
+    } elseif ( $subscription_count > 1 ) {
 
         edd_record_gateway_error( 'Payment Error', sprintf( 'We cannot create more than one subscription during checkout. Payment data: %s', json_encode( $payment_data ) ), $payment );
 
@@ -324,8 +341,10 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
 
             $body['billing_date'] = date( 'Y-m-d', strtotime( current_time( 'mysql' ). ' + 1 '.$date_string ) );
             
-            $body['recurring_amount'] = $subscription_products['billable'];
+            $body['recurring_amount'] = $purchase_data['subtotal'];
             /**
+             * 1 - Daily
+             * 2 - Weekly
              * 3 - Monthly
              * 4 - Quarterly
              * 5 - Biannually
@@ -333,15 +352,28 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
              */
             $body['frequency'] = $subscription_products['products'][0]['frequency'];
 
+            // Write a switch case for the above frequency to revert it back.
             switch( $body['frequency'] ){
+                case 1:
+                    $frequency_string = 'day';
+                    break;
+                case 2:
+                    $frequency_string = 'week';
+                    break;
                 case 3:
                     $frequency_string = 'month';
                     break;
+                case 4:
+                    $frequency_string = 'quarter';
+                    break;
+                case 5:
+                    $frequency_string = 'semi-year';
+                    break;
                 case 6:
-                    $frequency = 'year';
+                    $frequency_string = 'year';
                     break;
                 default:
-                    $frequency = 'month';
+                    $frequency_string = 'month';
             }
             /**
              * 0 - Unlimited
@@ -410,7 +442,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
             //     alert( 'An initial billing amount is required for a Payfast Transaction to be created. Please set a Sign Up Fee greater than 0 for this product.' );
             // }
 
-            document.getElementById('edd_pf_paynow').click();
+           document.getElementById('edd_pf_paynow').click();
           
         }
      </script>
