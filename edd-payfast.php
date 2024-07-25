@@ -327,9 +327,8 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
         $_SESSION['edd_pf_payment'] = $payment;
 
         $body['m_payment_id'] = 'EDD-' . $payment . '-' . uniqid();
-
-        $body['amount'] = number_format( sprintf( '%.2f', $once_off_products['billable'] ) );
-        $body['amount'] = floatval( $body['amount'] );
+        $body['amount'] = floatval( $once_off_products['billable'] );
+       
         $body['item_name'] = html_entity_decode( implode( ", ", $once_off_products['billing_description'] ) );        
 
         if( !empty($subscription_products['products'] ) ){
@@ -434,15 +433,7 @@ function pps_edd_payfast_process_payment_reworked( $purchase_data ) {
     ?>
     <script>
         window.onload = function(){
-
-            // var amount = document.getElementById('amount').value;
-
-            // if( amount == 0 ){
-            //     alert( 'An initial billing amount is required for a Payfast Transaction to be created. Please set a Sign Up Fee greater than 0 for this product.' );
-            // }
-
            document.getElementById('edd_pf_paynow').click();
-          
         }
      </script>
      <div style='width: 50%; text-align: center; display: block; margin: 50px auto;'>
