@@ -1,4 +1,5 @@
 <?php
+return; /// Remove this later on.
 $api_url = 'https://updates.pacificplugins.com/api/';
 
 $plugin_slug = basename(dirname(__FILE__));
@@ -12,6 +13,15 @@ function check_for_plugin_update($checked_data) {
 	//Comment out these two lines during testing.
 	if (empty($checked_data->checked))
 		return $checked_data;
+	
+	if ( empty( $plugin_slug ) ) {
+		return $checked_data;
+	}
+
+	// Cannot get the string of the plugin (due to incorrect name or something...)
+	if ( empty( $checked_data->checked[$plugin_slug .'/'. $plugin_slug .'.php'] ) ) {
+		return $checked_data;
+	}
 	
 	$args = array(
 		'slug' => $plugin_slug,
