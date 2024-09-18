@@ -70,6 +70,7 @@ function pps_edd_payfast_redirect() {
 
 			$check4 = pfValidServerConfirmation( $pfParamString, $payfast_verify_url );
 
+			if ( $check1 && $check2 && $check3 && $check4 ) {
 			    // All checks have passed, the payment is successful
                 //Only recurring orders will have this            
                 if( !empty( $_REQUEST['token'] ) ){
