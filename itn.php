@@ -6,6 +6,7 @@ function pps_edd_payfast_redirect() {
 
 	if( isset( $_REQUEST['payfast-listener'] ) ){
 
+
 		if( $_REQUEST['payfast-listener'] === 'cancel' ){            
 
             if( !empty( $_SESSION['edd_pf_payment'] ) ){
@@ -35,7 +36,7 @@ function pps_edd_payfast_redirect() {
 
             edd_send_back_to_checkout( array( 'payment_method' => 'payfast', 'payfast-status' => 'cancelled' ) );
 
-		} else if( $_REQUEST['payfast-listener'] === 'notify' ){
+		} else if( $_REQUEST['payfast-listener'] === 'notify' && $_REQUEST['payment_status'] === 'COMPLETE' ){
             
 			$pfData = $_POST;
 
@@ -67,30 +68,49 @@ function pps_edd_payfast_redirect() {
                 $payfast_verify_url = 'www.payfast.co.za';
             }
 
-			$check4 = pfValidServerConfirmation($pfParamString, $payfast_verify_url );
+			$check4 = pfValidServerConfirmation( $pfParamString, $payfast_verify_url );
 
-			if( $check1 && $check2 && $check3 && $check4 ){
 			    // All checks have passed, the payment is successful
-                
-                //Only recurring orders will have this              
+                //Only recurring orders will have this            
                 if( !empty( $_REQUEST['token'] ) ){
 
                     $subscriber = new EDD_Recurring_Subscriber( $_REQUEST['email_address'] );
-    
+
                     $subscriptions = $subscriber->get_subscriptions();    
 
-                    if( !empty( $subscriptions ) ){
-
-                        foreach( $subscriptions as $sub ){
+                    // Loop through all subscriptions and update the one that matches the transaction id or create a new one if it doesn't.
+                    if ( ! empty( $subscriptions ) ) {
+                        foreach ( $subscriptions as $sub ) {
                             
                             $subscription = new EDD_Subscription( $sub->id );
 
-                            $subscription->update( array(
-                                'profile_id' => $_REQUEST['token'],
-                                'status' => 'active',
-                                'transaction_id' => $_REQUEST['pf_payment_id']
-                            ) );
+                            // Update a recurring subscription if we need to, otherwise let's create a new order.
+                            if ( $sub->transaction_id == $_REQUEST['pf_payment_id']  ) {
+                                $subscription->update( array(
+                                    'profile_id' => $_REQUEST['token'],
+                                    'status' => 'active',
+                                    'transaction_id' => $_REQUEST['pf_payment_id'],
+                                ) );
+                            } else {
 
+                                $parent_order = edd_get_order( $subscription->parent_payment_id );
+
+                                // No parent order found, or gateway doesn't match just bail.
+                                if ( empty( $parent_order ) || 'payfast' !== $parent_order->gateway ) {
+                                    return;
+                                }
+
+                                // Create a new order for this subscription.
+                                $subscription_args = apply_filters( 'edd_payfast_successful_subscription_args', 
+                                    array(
+                                        'amount' => $_REQUEST['amount_gross'],
+                                        'transaction_id' => $_REQUEST['pf_payment_id'],
+                                    )
+                                );
+                                // Capture the order/payment for this process.
+                                $payment_id = $subscription->add_payment( $subscription_args );
+                            }
+                           
                         }
                     }                    
                 
@@ -114,27 +134,13 @@ function pps_edd_payfast_redirect() {
 
                 $order_total = edd_get_payment_amount( $edd_payment_id );
 
-                // if ( $_REQUEST['amount_gross'] < $order_total ) {
+                $note = 'Payment transaction was successful. Payfast Transaction Reference: ' . $_REQUEST['pf_payment_id'];
 
-                //     $note = 'Look into this purchase. This order is currently revoked. Reason: Amount paid is less than the total order amount. Amount Paid was ' . $amount_paid . ' while the total order amount is ' . $order_total . '. Payfast Transaction Reference: ' . $_REQUEST['pf_payment_id'];
+                $payment->status = 'publish';
 
-                //     $payment->status = 'revoked';
+                $payment->add_note( $note );
 
-                //     $payment->add_note( $note );
-
-                //     $payment->transaction_id = $_REQUEST['pf_payment_id'];
-
-                // } else {
-
-                    $note = 'Payment transaction was successful. Payfast Transaction Reference: ' . $_REQUEST['pf_payment_id'];
-
-                    $payment->status = 'publish';
-
-                    $payment->add_note( $note );
-
-                    $payment->transaction_id = $_REQUEST['pf_payment_id'];
-
-                // }
+                $payment->transaction_id = $_REQUEST['pf_payment_id'];
 
                 $payment->save();
                  
