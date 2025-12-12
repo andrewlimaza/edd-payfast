@@ -20,6 +20,9 @@ Accept once off and recurring payments through Easy Digital Downloads using Sout
 3. Configure Easy Digital Downloads and set PayFast as your primary gateway.
 
 == Changelog ==
+= 1.1.1 - 2025-12-12 =
+* General improvements and updates to the plugin.
+
 = 1.1.0 - 21-10-2021 =
 * BUG FIX: Fixed logic around signature generator for PayFast.
 * BUG FIX: Fixed errors when a products description has special characters in the name such as dashes, ampersands etc.

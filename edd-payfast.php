@@ -3,9 +3,10 @@
  * Plugin Name: Easy Digital Downloads - PayFast Integration
  * Plugin URI: https://arctek.co.za/downloads/easy-digital-downloads-payfast/
  * Description: Accept once off and recurring payments through Easy Digital Downloads using South Africa's most popular payment gateway, Payfast.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires at least: 5.2
  * Requires PHP: 7.2
+ * Tested up to: 6.9
  * Author: Arctek Technologies (Pty) Ltd
  * Author URI: https://arctek.co.za/
  * License: GPL v2 or later
@@ -21,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'PPS_EDD_PAYFAST_URL', plugin_dir_url( __FILE__ ) );
-define( 'PPS_EDD_PAYFAST_VERSION', '1.1.0' );
+define( 'PPS_EDD_PAYFAST_VERSION', '1.1.1' );
 
 // Check if Easy Digital Downloads is active
 if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
@@ -30,7 +31,6 @@ if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
 
 add_action( 'edd_payfast_cc_form', '__return_false' );
 
-require_once plugin_dir_path( __FILE__ ).'updates.php';
 require_once plugin_dir_path( __FILE__ ).'itn.php';
 
 class EDD_Payfast{
